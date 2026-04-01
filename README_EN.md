@@ -1,18 +1,57 @@
 # How Claude Code Works
 
+[![GitHub stars](https://img.shields.io/github/stars/Windy3f3f3f3f/how-claude-code-works?style=social)](https://github.com/Windy3f3f3f3f/how-claude-code-works)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![TypeScript](https://img.shields.io/badge/Source-TypeScript-3178C6?logo=typescript&logoColor=white)](https://github.com/anthropics/claude-code)
+
 > A deep dive into the source code architecture of the most successful AI coding agent
 
-[中文](./README.md)
+<p align="center">
+  <a href="https://windy3f3f3f3f.github.io/how-claude-code-works/#/"><strong>📘 Read Online →</strong></a>
+  &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="./README.md">中文</a>
+</p>
+
+> 🛠️ **Want to build one yourself?** Companion project **[Claude Code From Scratch](https://github.com/Windy3f3f3f3f/claude-code-from-scratch)** — 1300 lines of TypeScript, 8-chapter step-by-step tutorial, build your own Claude Code from zero
+
+---
 
 Claude Code is the most widely used AI coding agent today. It understands entire codebases, autonomously executes multi-step programming tasks, and safely runs commands — all powered by engineering wisdom distilled into **500K+ lines of TypeScript source code**.
 
 Anthropic open-sourced this codebase. **But where do you even start with 500K lines of code?**
 
-This project is the answer. We've distilled **11 topic-specific documents** covering every critical design decision, from the core agent loop to the security architecture. Whether you want to build your own AI agent or deeply understand how Claude Code works, this is the shortest path.
+This project is the answer. We've distilled **12 topic-specific documents** (338K characters total) covering every critical design decision, from the core agent loop to the security architecture. Whether you want to build your own AI agent or deeply understand how Claude Code works, this is the shortest path.
 
-## Related Projects
+## System Architecture
 
-- **[claude-code-from-scratch](https://github.com/Windy3f3f3f3f/claude-code-from-scratch)** — A minimal implementation & step-by-step tutorial for building Claude Code's core features from scratch
+<img alt="Architecture Overview" src="./assets/architecture.png" width="800" />
+
+```mermaid
+graph TB
+    User[User Input] --> QE[QueryEngine Session Manager]
+    QE --> Query[query Main Loop]
+    Query --> API[Claude API Call]
+    API --> Parse{Parse Response}
+    Parse -->|Text| Output[Streaming Output]
+    Parse -->|Tool Call| Tools[Tool Execution Engine]
+    Tools --> ReadTool[File Read]
+    Tools --> EditTool[File Edit]
+    Tools --> ShellTool[Shell Exec]
+    Tools --> SearchTool[Search Tools]
+    Tools --> MCPTool[MCP Tools]
+    Tools -->|Results| Query
+
+    Context[Context Engineering] --> Query
+    Context --> SysPrompt[System Prompt]
+    Context --> GitStatus[Git Status]
+    Context --> ClaudeMD[CLAUDE.md]
+    Context --> Compact[Compression Pipeline]
+
+    Perm[Permission System] --> Tools
+    Perm --> Rules[Rule Layer]
+    Perm --> AST[Bash AST Analysis]
+    Perm --> Confirm[User Confirmation]
+```
 
 ## Why is this source code worth studying?
 
@@ -87,35 +126,6 @@ Claude Code supports three multi-agent modes:
 
 To prevent conflicts from multiple agents editing the same files, the system uses Git Worktrees to give each agent its own isolated copy of the codebase.
 
-## System Architecture
-
-```mermaid
-graph TB
-    User[User Input] --> QE[QueryEngine Session Manager]
-    QE --> Query[query Main Loop]
-    Query --> API[Claude API Call]
-    API --> Parse{Parse Response}
-    Parse -->|Text| Output[Streaming Output]
-    Parse -->|Tool Call| Tools[Tool Execution Engine]
-    Tools --> ReadTool[File Read]
-    Tools --> EditTool[File Edit]
-    Tools --> ShellTool[Shell Exec]
-    Tools --> SearchTool[Search Tools]
-    Tools --> MCPTool[MCP Tools]
-    Tools -->|Results| Query
-
-    Context[Context Engineering] --> Query
-    Context --> SysPrompt[System Prompt]
-    Context --> GitStatus[Git Status]
-    Context --> ClaudeMD[CLAUDE.md]
-    Context --> Compact[Compression Pipeline]
-
-    Perm[Permission System] --> Tools
-    Perm --> Rules[Rule Layer]
-    Perm --> AST[Bash AST Analysis]
-    Perm --> Confirm[User Confirmation]
-```
-
 ## Documentation
 
 ### Quick Start
@@ -166,7 +176,7 @@ graph TB
 → Read in order: [Agent Loop](./docs/02-agent-loop.md) → [Context Engineering](./docs/03-context-engineering.md) → [Tool System](./docs/04-tool-system.md)
 
 **Want to build your own AI agent?**
-→ Start with [Minimal Components](./docs/12-minimal-components.md), then check out [claude-code-from-scratch](https://github.com/Windy3f3f3f3f/claude-code-from-scratch)
+→ Start with [Minimal Components](./docs/12-minimal-components.md), then follow **[claude-code-from-scratch](https://github.com/Windy3f3f3f3f/claude-code-from-scratch)** — 8-chapter hands-on tutorial, 1300 lines of code, every step mapped to the real source
 
 **Want to customize Claude Code?**
 → Read [Hooks & Extensibility](./docs/06-hooks-extensibility.md) + [Memory System](./docs/08-memory-system.md) + [Skills System](./docs/09-skills-system.md)

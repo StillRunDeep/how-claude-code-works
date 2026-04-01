@@ -1,10 +1,20 @@
 # How Claude Code Works
 
+[![GitHub stars](https://img.shields.io/github/stars/Windy3f3f3f3f/how-claude-code-works?style=social)](https://github.com/Windy3f3f3f3f/how-claude-code-works)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![TypeScript](https://img.shields.io/badge/Source-TypeScript-3178C6?logo=typescript&logoColor=white)](https://github.com/anthropics/claude-code)
+
 > 深入解读当前最成功的 AI 编程 Agent 的源码架构
 
-**[在线阅读 →](https://windy3f3f3f3f.github.io/how-claude-code-works/#/)**
+<p align="center">
+  <a href="https://windy3f3f3f3f.github.io/how-claude-code-works/#/"><strong>📘 在线阅读文档 →</strong></a>
+  &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="./README_EN.md">English</a>
+</p>
 
-[English](./README_EN.md)
+> 🛠️ **想动手造一个？** 配套项目 **[Claude Code From Scratch](https://github.com/Windy3f3f3f3f/claude-code-from-scratch)** — 1300 行 TypeScript，8 章分步教程，从零构建你自己的 Claude Code
+
+---
 
 Claude Code 是目前使用最广泛的 AI 编程 Agent，也是我认为最好用的AI编程工具（我使用Claude Code已经一年了）。它能理解整个代码仓库、自主执行多步编程任务、安全地运行命令——而这一切背后是 **50 万行 TypeScript 源码**中沉淀的工程智慧。
 
@@ -12,25 +22,38 @@ Anthropic 开源（x）了这份源码。**但 50 万行代码，从哪里开始
 
 这也是我创建这个项目的初衷，我自己也遇到了没有办法阅读这么长的代码项目的问题，我的解决方案是和Claude Code一起读，让他给我写文档配合我读源代码。在此同时，我想把这个过程文档化，就形成了这个项目。
 
-我和Claude Code加班从源码中提炼出 **12 篇专题文档**，覆盖了从核心循环到安全防护的每一个关键设计决策。不管你是想造自己的 AI Agent，还是想更深入地理解和使用 Claude Code，这里都是最短路径（应该？就算不是最短的，我也会不断更新这个项目）。
+我和Claude Code加班从源码中提炼出 **12 篇专题文档**（共33.8w字符），覆盖了从核心循环到安全防护的每一个关键设计决策。不管你是想造自己的 AI Agent，还是想更深入地理解和使用 Claude Code，这里都是最短路径（应该？就算不是最短的，我也会不断更新这个项目）。
 
-## 相关项目
-
-- **[claude-code-from-scratch](https://github.com/Windy3f3f3f3f/claude-code-from-scratch)** — 从零实现 Claude Code 核心功能的最小化实现与分步教程（每一步实现都有源码的reference），我和Claude Code用1300行代码实现了一个minimal的Claude Code，遵循了其开源代码中的设计哲学和实现方案，但是又是最小化的。
+## 系统架构
 
 <img alt="架构总览" src="./assets/architecture.png" width="800" />
 
-## 更新记录
+```mermaid
+graph TB
+    User[用户输入] --> QE[QueryEngine 会话管理]
+    QE --> Query[query 主循环]
+    Query --> API[Claude API 调用]
+    API --> Parse{解析响应}
+    Parse -->|文本| Output[流式输出]
+    Parse -->|工具调用| Tools[工具执行引擎]
+    Tools --> ReadTool[读文件]
+    Tools --> EditTool[编辑文件]
+    Tools --> ShellTool[Shell 执行]
+    Tools --> SearchTool[搜索工具]
+    Tools --> MCPTool[MCP 工具]
+    Tools -->|结果回注| Query
 
-| 日期 | 更新内容 |
-|------|---------|
-| 2026-04-01 | 拆分记忆与技能为独立章节（11→12 篇），按侧边栏分组重新编号 01-12 |
-| 2026-04-01 | 全部 12 章大幅扩充（篇幅翻倍），补充源码级实现细节、Mermaid 架构图、代码示例 |
-| 2026-04-01 | 同步更新 quick-start 总览页、README 文档目录描述，匹配各章节新增内容 |
-| 2026-03-31 | 新增 3 章：Hooks 与可扩展性、多 Agent 架构、记忆与技能系统 |
-| 2026-03-31 | 充实原有 8 章内容，补充启动流程、MCP 集成、压缩恢复机制等专题 |
-| 2026-03-31 | 上线 Docsify 文档站点，支持搜索、Mermaid 渲染、章节导航 |
-| 2026-03-31 | 初始发布：8 篇核心架构分析文档 |
+    Context[上下文工程] --> Query
+    Context --> SysPrompt[系统提示词]
+    Context --> GitStatus[Git 状态]
+    Context --> ClaudeMD[CLAUDE.md]
+    Context --> Compact[压缩流水线]
+
+    Perm[权限系统] --> Tools
+    Perm --> Rules[规则层]
+    Perm --> AST[Bash AST 分析]
+    Perm --> Confirm[用户确认]
+```
 
 ## 这份源码为什么值得深入研究？
 
@@ -104,35 +127,6 @@ Claude Code 支持三种多 Agent 模式：
 
 为了防止多个 Agent 同时改同一个文件产生冲突，系统用 Git Worktree 给每个 Agent 一份独立的代码副本。
 
-## 系统架构
-
-```mermaid
-graph TB
-    User[用户输入] --> QE[QueryEngine 会话管理]
-    QE --> Query[query 主循环]
-    Query --> API[Claude API 调用]
-    API --> Parse{解析响应}
-    Parse -->|文本| Output[流式输出]
-    Parse -->|工具调用| Tools[工具执行引擎]
-    Tools --> ReadTool[读文件]
-    Tools --> EditTool[编辑文件]
-    Tools --> ShellTool[Shell 执行]
-    Tools --> SearchTool[搜索工具]
-    Tools --> MCPTool[MCP 工具]
-    Tools -->|结果回注| Query
-
-    Context[上下文工程] --> Query
-    Context --> SysPrompt[系统提示词]
-    Context --> GitStatus[Git 状态]
-    Context --> ClaudeMD[CLAUDE.md]
-    Context --> Compact[压缩流水线]
-
-    Perm[权限系统] --> Tools
-    Perm --> Rules[规则层]
-    Perm --> AST[Bash AST 分析]
-    Perm --> Confirm[用户确认]
-```
-
 ## 文档目录
 
 ### 快速入门
@@ -183,7 +177,7 @@ graph TB
 → 按顺序读 [主循环](./docs/02-agent-loop.md) → [上下文工程](./docs/03-context-engineering.md) → [工具系统](./docs/04-tool-system.md)
 
 **想自己造一个 AI Agent？**
-→ 先读 [最小必要组件](./docs/12-minimal-components.md)，再去看 [claude-code-from-scratch](https://github.com/Windy3f3f3f3f/claude-code-from-scratch)
+→ 先读 [最小必要组件](./docs/12-minimal-components.md)，然后跟着 **[claude-code-from-scratch](https://github.com/Windy3f3f3f3f/claude-code-from-scratch)** 的 8 章教程动手实现——1300 行代码，每一步都对照源码讲解
 
 **想定制 Claude Code？**
 → 读 [Hooks 与可扩展性](./docs/06-hooks-extensibility.md) + [记忆系统](./docs/08-memory-system.md) + [技能系统](./docs/09-skills-system.md)
@@ -198,6 +192,18 @@ graph TB
 ## 致谢
 
 感谢 [LINUX DO](https://linux.do/) 社区的支持与讨论。
+
+## 更新记录
+
+| 日期 | 更新内容 |
+|------|---------|
+| 2026-04-01 | 拆分记忆与技能为独立章节（11→12 篇），按侧边栏分组重新编号 01-12 |
+| 2026-04-01 | 全部 12 章大幅扩充（篇幅翻倍），补充源码级实现细节、Mermaid 架构图、代码示例 |
+| 2026-04-01 | 同步更新 quick-start 总览页、README 文档目录描述，匹配各章节新增内容 |
+| 2026-03-31 | 新增 3 章：Hooks 与可扩展性、多 Agent 架构、记忆与技能系统 |
+| 2026-03-31 | 充实原有 8 章内容，补充启动流程、MCP 集成、压缩恢复机制等专题 |
+| 2026-03-31 | 上线 Docsify 文档站点，支持搜索、Mermaid 渲染、章节导航 |
+| 2026-03-31 | 初始发布：8 篇核心架构分析文档 |
 
 ## License
 
